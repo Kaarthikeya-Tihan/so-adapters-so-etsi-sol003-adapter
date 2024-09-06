@@ -1,4 +1,213 @@
+<!-- the commented one is original one-->
+<!-- some plugins are updated in this-->
+
+
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.onap.so</groupId>
+        <artifactId>so</artifactId>
+        <version>1.9.0-SNAPSHOT</version>
+    </parent>
+    <groupId>org.onap.so.adapters.so-etsi-sol003-adapter</groupId>
+    <artifactId>so-etsi-sol003-adapter</artifactId>
+    <version>1.9.0-SNAPSHOT</version>
+    <name>SO ETSI SOL003 Adapter</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <java.version>11</java.version>
+        <version.java.compiler>11</version.java.compiler>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <version-swagger-codegen>2.3.1</version-swagger-codegen>
+        <swagger-core-version>1.5.21</swagger-core-version>
+        <spring-security-oauth2-version>2.3.6.RELEASE</spring-security-oauth2-version>
+        <jaxb-api>2.3.0</jaxb-api>
+        <snakeyaml-version>0.11</snakeyaml-version>
+        <hamcrest-version>2.2</hamcrest-version>
+        <equalsverifier-version>3.4.1</equalsverifier-version>
+        <so-core-version>1.8.0-SNAPSHOT</so-core-version>
+        <gson-version>2.8.9</gson-version>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${version.java.compiler}</source>
+                    <target>${version.java.compiler}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>2.9.0</version>
+                <executions>
+                    <execution>
+                        <id>format-java</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>format-xml</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <skip>true</skip>
+                            <includes>
+                                <include>pom.xml</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>validate-java</id>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>validate-poms</id>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                            <includes>
+                                <include>pom.xml</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.gmaven</groupId>
+        <artifactId>groovy-maven-plugin</artifactId>
+        <version>2.1.1</version>
+        <executions>
+          <!-- set absolute base path from super pom -->
+          <execution>
+            <id>find-basepath</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <source>
+                <![CDATA[
+                    import java.io.File;
+                    log.info('## define projects super pom absolute path through basepath_marker')
+                    String p = "basepath_marker";
+                    File f = null;
+                    if( p != null ) {
+                        def _max_child_poms = 0
+                        while( _max_child_poms++ < 5 ) {
+                            f = new File( p );
+                            if( f.exists() ) {
+                                break;
+                            }
+                            p = "../" + p;
+                        }
+                    }
+                    if( f != null ) {
+                        String basePath = f.getCanonicalPath();
+                        basePath = basePath.substring( 0, basePath.lastIndexOf( File.separator ) );
+                        project.properties['base-path'] = basePath.replace( '\\' , '/');
+                        log.info(' - used base path = ' + project.properties['base-path'] );
+                    } else {
+                        log.error( 'Could not find basepath_marker marker file!' );
+                        System.stop( 0 );
+                    }
+                ]]>
+              </source>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+<!--  <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.0.0-M9</version>
+    <configuration>
+      <argLine>-Xms1G -Xmx2G</argLine>
+    </configuration>
+   </plugin> -->
+
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M9</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.junit.jupiter</groupId>
+              <artifactId>junit-jupiter-engine</artifactId>
+              <version>5.5.2</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <systemPropertyVariables>
+              <so.log.level>DEBUG</so.log.level>
+            </systemPropertyVariables>
+            <rerunFailingTestsCount>2</rerunFailingTestsCount>
+            <parallel>classes</parallel>
+            <useUnlimitedThreads>false</useUnlimitedThreads>
+            <threadCount>1</threadCount>
+
+          <argLine>-Xms512m -Xmx1024m</argLine>
+          <forkCount>1</forkCount>
+          <reuseForks>true</reuseForks>
+
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.22.2</version>
+          <configuration>
+            <skip>true</skip>
+            <systemPropertyVariables>
+              <so.log.level>DEBUG</so.log.level>
+            </systemPropertyVariables>
+            <rerunFailingTestsCount>2</rerunFailingTestsCount>
+          </configuration>
+        </plugin>
+
+
+        </plugins>
+    </build>
+
+    <modules>
+        <module>so-etsi-sol003-adapter-common</module>
+        <module>so-etsi-sol003-adapter-pkgm</module>
+        <module>so-etsi-sol003-adapter-lcm</module>
+        <module>so-etsi-sol003-adapter-application</module>
+        <module>packages</module>
+    </modules>
+</project>
+
+
+
+
+
+
+<!-- <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -100,3 +309,4 @@
         <module>packages</module>
     </modules>
 </project>
+ -->
